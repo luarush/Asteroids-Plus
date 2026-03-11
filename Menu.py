@@ -6,6 +6,7 @@ from leaderboard import *
 from instructions import *
 from CoOp import *
 import pygame.font
+import feedparser
 
 class Menu:
     def __init__(self):
@@ -37,11 +38,58 @@ class Menu:
         self.instructionsButton = Button((WIN_WIDTH - 120, WIN_HEIGHT - 70), (100, 50), WHITE, "Help")
         self.coOpButton = Button((WIN_WIDTH/2 + 20, WIN_HEIGHT/2 - 150), (100, 100), WHITE, "CO-OP")
 
-        
+        self.alert_message = self.fetch_alert()
+
+        if self.alert_message:
+            print("ALERT:", self.alert_message)
+
+    #makes alert text fit on screen
+    def wrap_text(self, text, font, max_width):
+        words = text.split(" ")
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = current_line + word + " "
+            width, _ = font.size(test_line)
+
+            if width <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word + " "
+
+        lines.append(current_line)
+        return lines
+
+    #fetches alert using feedparser
+    def fetch_alert(self):
+        try:
+            feed = feedparser.parse("https://nitter.net/TempleAlert/rss")
+            if feed.entries:
+                return feed.entries[0].title
+        except Exception as e:
+            print("Alert fetch failed:", e)
+
+        return None
+
     def draw(self):
         self.screen.blit(self.background, (0,0))
         self.screen.blit(self.bg_stars, (self.bg_stars_x1 ,0))
         self.screen.blit(self.bg_stars, (self.bg_stars_x2 ,0))
+
+        #writes alert to the main window
+        if self.alert_message:
+            alert_font = pygame.font.Font(None, 36)
+
+            lines = self.wrap_text(self.alert_message, alert_font, WIN_WIDTH - 40)
+
+            y = WIN_HEIGHT - 750
+            for line in lines:
+                alert_surface = alert_font.render(line, True, (255, 0, 0))
+                alert_rect = alert_surface.get_rect(center=(WIN_WIDTH/2, y))
+                self.screen.blit(alert_surface, alert_rect)
+                y += 35
         
         self.title_y += self.title_y_velocity
         if self.title_y >= WIN_HEIGHT - 635:
