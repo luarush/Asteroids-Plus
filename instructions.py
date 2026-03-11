@@ -117,7 +117,8 @@ class InstructionsMenu:
                 "Left and Right key: You can rotate your spaceship left or right to aim at the asteroids.\n"
                 "Upward key: This button moves your spaceship forward in the direction it's pointing.\n"
                 "Movement is based on real physics, so you will continue drifting in one direction until you apply thrust in another direction.\n"
-                "Space Key: Shoots bullets from your spaceship to break the asteroids into smaller pieces or destroy them entirely."
+                "Space Key: Shoots bullets from your spaceship to break the asteroids into smaller pieces or destroy them entirely.\n"
+                "E Key: Dash in the direction your spaceship is facing."
             )   
         elif self.mechanicsButton.is_clicked(event):
             self.current_message = (

@@ -186,6 +186,9 @@ class Game:
         self.screen.blit(self.bg_stars, (self.bg_stars_x1 ,0))
         self.screen.blit(self.bg_stars, (self.bg_stars_x2 ,0))
         self.all_sprites.draw(self.screen) 
+
+        # draw player cooldown bar
+        self.player.draw_cooldown_bar(self.screen)
         
         self.clock.tick(FPS) #update the screen based on FPS
         minutes = self.game_timer // (60 * FPS)
