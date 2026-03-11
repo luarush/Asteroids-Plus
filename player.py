@@ -2,6 +2,7 @@ import pygame
 from config import *
 import math
 import random
+from dashEffect import DashEffect
 
 class Player(pygame.sprite.Sprite):
     
@@ -14,6 +15,11 @@ class Player(pygame.sprite.Sprite):
 
         self.lives = PLAYER_LIVES
         self.last_shot_time = 0  # Initialize the last shot time
+
+        # dash stuff
+        self.last_dash_time = 0
+        self.dash_cooldown = 5000 
+        self.dash_distance = 150
 
         # player position based on tile
         self.x = x * TILESIZE
@@ -91,6 +97,37 @@ class Player(pygame.sprite.Sprite):
         self.rotate()
         self.handle_input()
            
+    def dash(self):
+        DashEffect(self.game, self.rect.center, 'Images/dash/dash-1.png')
+
+        # calc the final dash position
+        rad_angle = math.radians(self.angle)
+        dash_x = math.cos(rad_angle) * self.dash_distance
+        dash_y = math.sin(rad_angle) * self.dash_distance
+        
+        # vwooop (dash)
+        self.rect.centerx += dash_x
+        self.rect.centery += dash_y
+        self.wrap_around_screen()
+
+        DashEffect(self.game, self.rect.center, 'Images/dash/dash-2.png')
+
+    def draw_cooldown_bar(self, screen):
+        current_time = pygame.time.get_ticks()
+        time_passed = current_time - self.last_dash_time
+        
+        # if still in cooldown then draw the bar
+        if time_passed < self.dash_cooldown:
+            progress = time_passed / self.dash_cooldown
+            
+            bar_width = TILESIZE
+            bar_x = self.rect.centerx - bar_width / 2
+            bar_y = self.rect.top - 10
+            
+            # draw bg
+            pygame.draw.rect(screen, (200, 0, 0), (bar_x, bar_y, bar_width, 5))
+            # draw progres
+            pygame.draw.rect(screen, (0, 200, 0), (bar_x, bar_y, bar_width * progress, 5))
 
     def shoot_regular_bullet(self):
         bullet = RegularBullet(self, self.rect.centerx, self.rect.centery, self.angle)
@@ -124,6 +161,11 @@ class Player(pygame.sprite.Sprite):
             self.shoot_special_bullet()
             PLAYER_CHANNEL.play(PLAYER_BULLET_MUSIC)
             self.last_shot_time = current_time  # Update the last shot time
+        
+        if keys[pygame.K_e] and (current_time - self.last_dash_time) >= self.dash_cooldown:
+            self.dash()
+            DASH_CHANNEL.play(DASH_MUSIC)
+            self.last_dash_time = current_time
 
     def wrap_around_screen(self):
         if self.rect.right < 0:
