@@ -2,9 +2,10 @@ import pygame
 from config import *
 import math
 import random
+from dashEffect import DashEffect
 
 class Player(pygame.sprite.Sprite):
-    
+
     def __init__(self, game, x, y, image_list):
 
         self.game = game
@@ -13,7 +14,14 @@ class Player(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self, self.groups) #add player to all sprites group
 
         self.lives = PLAYER_LIVES
+        self.last_regular_shot = 0
+        self.last_special_shot = 0
         self.last_shot_time = 0  # Initialize the last shot time
+
+        # dash stuff
+        self.last_dash_time = 0
+        self.dash_cooldown = 5000 
+        self.dash_distance = 150
 
         # player position based on tile
         self.x = x * TILESIZE
@@ -23,7 +31,7 @@ class Player(pygame.sprite.Sprite):
         self.height = TILESIZE
 
         # create player
-        self.image_list = image_list 
+        self.image_list = image_list
         self.og_image = self.image_list[0]
         self.image = self.og_image
         self.damaged_image = self.image_list[3]
@@ -47,13 +55,13 @@ class Player(pygame.sprite.Sprite):
         self.y_change = 0
         self.angle = 0
         self.player_bullets = self.game.player_bullets
-        
+
         self.score = 0
-        
+
     #update player sprite
     def update(self):
 
-        current_time = pygame.time.get_ticks()           
+        current_time = pygame.time.get_ticks()
         #update movement
         self.rotate()
         self.movement()
@@ -64,7 +72,7 @@ class Player(pygame.sprite.Sprite):
         self.collide(self.game.ship_bullets)
         self.collide(self.game.asteroids)
         self.collide(self.game.ships)
-        
+
 
         #update acceleration
         self.rect.center += self.velocity  # Apply velocity to the player's position
@@ -91,6 +99,38 @@ class Player(pygame.sprite.Sprite):
         self.rotate()
         self.handle_input()
            
+    def dash(self):
+        DashEffect(self.game, self.rect.center, 'Images/dash/dash-1.png')
+
+        # calc the final dash position
+        rad_angle = math.radians(self.angle)
+        dash_x = math.cos(rad_angle) * self.dash_distance
+        dash_y = math.sin(rad_angle) * self.dash_distance
+        
+        # vwooop (dash)
+        self.rect.centerx += dash_x
+        self.rect.centery += dash_y
+        self.wrap_around_screen()
+
+        DashEffect(self.game, self.rect.center, 'Images/dash/dash-2.png')
+
+    def draw_cooldown_bar(self, screen):
+        current_time = pygame.time.get_ticks()
+        time_passed = current_time - self.last_dash_time
+        
+        # if still in cooldown then draw the bar
+        if time_passed < self.dash_cooldown:
+            progress = time_passed / self.dash_cooldown
+            
+            bar_width = TILESIZE
+            bar_x = self.rect.centerx - bar_width / 2
+            bar_y = self.rect.top - 10
+            
+            # draw bg
+            pygame.draw.rect(screen, (200, 0, 0), (bar_x, bar_y, bar_width, 5))
+            # draw progres
+            pygame.draw.rect(screen, (0, 200, 0), (bar_x, bar_y, bar_width * progress, 5))
+
 
     def shoot_regular_bullet(self):
         bullet = RegularBullet(self, self.rect.centerx, self.rect.centery, self.angle)
@@ -113,17 +153,31 @@ class Player(pygame.sprite.Sprite):
         current_time = pygame.time.get_ticks()
 
         # Calculate the time elapsed since the last shot
-        time_since_last_shot = current_time - self.last_shot_time
+        #time_since_last_shot = current_time - self.last_shot_time
 
-        if keys[pygame.K_SPACE] and time_since_last_shot >= 500:  # Shoot only if 500 milliseconds (0.5 second) have passed since the last shot
-            self.shoot_regular_bullet()  # Shoot regular bullet when space key is pressed
-            PLAYER_CHANNEL.play(PLAYER_BULLET_MUSIC)
-            self.last_shot_time = current_time  # Update the last shot time
+        #change to ship 2 as long as you're pressing "Shift"
+        if keys[pygame.K_LSHIFT]:
+            self.og_image = SHIP_B[0] #switch to fast shot ship
+            if current_time - self.last_special_shot >= 100:
+                self.shoot_special_bullet()
+                PLAYER_CHANNEL.play(PLAYER_BULLET_MUSIC)
+                self.last_special_shot = current_time  # Update the last shot time
 
         elif keys[pygame.K_LSHIFT] and time_since_last_shot >= 500:
             self.shoot_special_bullet()
             PLAYER_CHANNEL.play(PLAYER_BULLET_MUSIC)
             self.last_shot_time = current_time  # Update the last shot time
+        
+        elif keys[pygame.K_e] and (current_time - self.last_dash_time) >= self.dash_cooldown:
+            self.dash()
+            DASH_CHANNEL.play(DASH_MUSIC)
+            self.last_dash_time = current_time
+        else:
+            self.og_image = self.image_list[0] #back to normal ship
+            if keys[pygame.K_SPACE] and current_time - self.last_regular_shot >= 500:  # Shoot only if 500 milliseconds (0.5 second) have passed since the last shot
+                self.shoot_regular_bullet()  # Shoot regular bullet when space key is pressed
+                PLAYER_CHANNEL.play(PLAYER_BULLET_MUSIC)
+                self.last_regular_shot = current_time
 
     def wrap_around_screen(self):
         if self.rect.right < 0:
@@ -169,24 +223,24 @@ class Player(pygame.sprite.Sprite):
             self.turnRight()
         if keys[pygame.K_UP]:
             self.moveForward()
-  
+
     def collide(self, spriteGroup):
         current_time = pygame.time.get_ticks()
         for sprite in spriteGroup:
             distance = math.sqrt((self.rect.centerx - sprite.rect.centerx) ** 2 + (self.rect.centery - sprite.rect.centery) ** 2)
             collision_threshold = max(self.rect.width, self.rect.height) / 2 + max(sprite.rect.width, sprite.rect.height) / 2 - 2 * TILESIZE
-            
+
             # Check if within collision threshold and not currently invulnerable
             if distance < collision_threshold and current_time > self.damage_loop + 3000:  # Assuming 3000 ms invulnerability
                 self.lives -= 1
                 PLAYER_DESTROYED_CHANNEL.play(PLAYER_DESTROYED_MUSIC)
                 self.damage_loop = current_time  # Reset invulnerability timer
-                
+
                 if self.lives <= 0:
                     self.kill()
                     self.game.playing = False
                     break
-            
+
 class RegularBullet(pygame.sprite.Sprite):
     def __init__(self, game, x, y, angle):
         super().__init__()
@@ -204,12 +258,12 @@ class RegularBullet(pygame.sprite.Sprite):
         self.rect.x += self.vel_x
         self.rect.y += self.vel_y
         #self.collide(self.game.asteroids)
-        # destroy bullet exists for more than 2 seconds
-        if pygame.time.get_ticks() - self.creation_time > 2000: 
+        # destroy bullet exists for more than x seconds
+        if pygame.time.get_ticks() - self.creation_time > 800:
             self.kill()
 
         # leaves the screen = reenters from the opposite side
-        if self.rect.bottom < 0: 
+        if self.rect.bottom < 0:
             self.rect.y = WIN_HEIGHT
             self.rect.x = WIN_WIDTH - self.rect.x
         if self.rect.right < 0:
@@ -237,13 +291,13 @@ class SpecialBullet(pygame.sprite.Sprite):
     def update(self):
         self.rect.x += self.vel_x
         self.rect.y += self.vel_y
-        
-        # destroy bullet exists for more than 2 seconds
-        if pygame.time.get_ticks() - self.creation_time > 2000: 
+
+        # destroy bullet exists for more than x seconds
+        if pygame.time.get_ticks() - self.creation_time > 800:
             self.kill()
 
         # leaves the screen = reenters from the opposite side
-        if self.rect.bottom < 0: 
+        if self.rect.bottom < 0:
             self.rect.y = WIN_HEIGHT
             self.rect.x = WIN_WIDTH - self.rect.x
         if self.rect.right < 0:
@@ -255,5 +309,3 @@ class SpecialBullet(pygame.sprite.Sprite):
         if self.rect.left > WIN_WIDTH:
             self.rect.y = WIN_HEIGHT - self.rect.y
             self.rect.x = 0
-        
-        

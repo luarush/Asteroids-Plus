@@ -134,6 +134,7 @@ SHIP_MUSIC = pygame.mixer.Sound('Sounds/Ship Sounds.mp3')
 PLAYER_DESTROYED_MUSIC = pygame.mixer.Sound('Sounds/Player Destroyed.mp3')
 POWERUP_MUSIC = pygame.mixer.Sound('Sounds/Obtain Powerup.mp3')
 BOMB_MUSIC = pygame.mixer.Sound('Sounds/Explosion.mp3')
+DASH_MUSIC = pygame.mixer.Sound('Sounds/Dash.wav')
         
 # play music on separate channels
 MUSIC_CHANNEL = pygame.mixer.Channel(0)
@@ -142,6 +143,7 @@ PLAYER_CHANNEL = pygame.mixer.Channel(2)
 PLAYER_DESTROYED_CHANNEL = pygame.mixer.Channel(3)
 SHIP_CHANNEL = pygame.mixer.Channel(4)
 POWERUP_CHANNEL = pygame.mixer.Channel(5)
+DASH_CHANNEL = pygame.mixer.Channel(6)
 
 # set volume, needs continuous testing
 pygame.mixer.Channel(0).set_volume(2)
@@ -149,4 +151,6 @@ pygame.mixer.Channel(1).set_volume(10)
 pygame.mixer.Channel(2).set_volume(3)
 pygame.mixer.Channel(4).set_volume(0.5)
 pygame.mixer.Channel(3).set_volume(10)
+pygame.mixer.Channel(6).set_volume(10)
+
 
