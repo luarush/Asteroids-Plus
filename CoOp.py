@@ -1,3 +1,4 @@
+from color_theme import theme
 import pygame
 import sys
 import time
@@ -90,6 +91,7 @@ class CoOp:
         self.screen.blit(self.bg_stars, (self.bg_stars_x1 ,0))
         self.screen.blit(self.bg_stars, (self.bg_stars_x2 ,0))
         self.all_sprites.draw(self.screen) 
+        theme.draw_overlay(self.screen)
         
         for asteroid in self.asteroids:
             self.screen.blit(asteroid.image, asteroid.rect)
@@ -98,8 +100,9 @@ class CoOp:
         minutes = self.game_timer // (60 * FPS)
         seconds = (self.game_timer // FPS) % 60
         
-        player_1_lives_text = self.font.render('Player 1 Lives: ' + str(self.player1.lives), False, WHITE)
-        player_2_lives_text = self.font.render('Player 2 Lives: ' + str(self.player2.lives), False, WHITE)
+        hud_col = theme.get_hud_color()
+        player_1_lives_text = self.font.render('Player 1 Lives: ' + str(self.player1.lives), False, hud_col)
+        player_2_lives_text = self.font.render('Player 2 Lives: ' + str(self.player2.lives), False, hud_col)
         
         # Draw the lives text
         self.screen.blit(player_1_lives_text, (10, 10))
@@ -177,6 +180,8 @@ class CoOp:
         self.game_timer += 1
         self.asteroid_timer += 1
         self.spawn_timer_powerup += 1
+        theme.update()
+
 
         # run asteroid alg
         self.asteroid_alg()

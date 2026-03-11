@@ -1,3 +1,4 @@
+from color_theme import theme
 import math
 import pygame
 import random
@@ -49,11 +50,14 @@ class Powerups(pygame.sprite.Sprite):
             if distance < collision_threshold:
                 if self.image == self.images[0]:
                     POWERUP_CHANNEL.play(POWERUP_MUSIC)
+                    theme.trigger_powerup_shield(5000)
                     self.shield_funct(player)
                 elif self.image == self.images[1]:
                     POWERUP_CHANNEL.play(POWERUP_MUSIC)
+                    theme.trigger_powerup_plus(600)
                     self.plus_funct(player)
                 elif self.image == self.images[2]:
                     POWERUP_CHANNEL.play(BOMB_MUSIC)
+                    theme.trigger_bomb(500)
                     self.bomb_funct()
                 self.kill()  # Remove the powerup sprite after collision

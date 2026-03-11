@@ -9,6 +9,7 @@ from asteroid import *
 from powerups import *
 from leaderboard import *
 from explosion import *
+from color_theme import theme
 
 class Game:
     asteroid_timer = 0
@@ -94,6 +95,8 @@ class Game:
         self.game_timer += 1
         self.spawn_timer_powerup += 1
         self.asteroid_timer += 0.5
+        
+        theme.update()
  
         self.asteroid_alg()
         # check all collision for asteroid
@@ -170,6 +173,7 @@ class Game:
             #points given each minute
             self.player.score+=500
             self.game_timer = 0
+            theme.trigger_minute_alert()
         
         # spawn powerups based off the game time
         if self.spawn_timer_powerup >= SPAWN_DELAY_POWERUP * FPS:
@@ -187,6 +191,7 @@ class Game:
         self.screen.blit(self.bg_stars, (self.bg_stars_x2 ,0))
         self.all_sprites.draw(self.screen) 
 
+        theme.draw_overlay(self.screen)
         # draw player cooldown bar
         self.player.draw_cooldown_bar(self.screen)
         
@@ -194,13 +199,15 @@ class Game:
         minutes = self.game_timer // (60 * FPS)
         seconds = (self.game_timer // FPS) % 60
 
+        hud_col   = theme.get_hud_color()
+        score_col = theme.get_score_color()
         # draw clock
-        time_text = self.font.render(f"Time: {minutes:02}-{seconds:02}", True, WHITE)
+        time_text = self.font.render(f"Time: {minutes:02}-{seconds:02}", True, hud_col)
         time_rect = time_text.get_rect(topright=(WIN_WIDTH - 10, 10))
         self.screen.blit(time_text, time_rect)
 
-        lives_text = self.font.render('Lives: ' + str(self.player.lives), False, WHITE)
-        score_text = self.font.render('Score: ' + str(self.player.score), False, WHITE)
+        lives_text = self.font.render('Lives: ' + str(self.player.lives), False, hud_col)
+        score_text = self.font.render('Score: ' + str(self.player.score), False, score_col)
         
         # Draw the lives text
         self.screen.blit(lives_text, (10, 10))
@@ -293,12 +300,13 @@ class Game:
 
 
     def game_over_screen(self):
-        self.screen.fill((0, 0, 0))  # Fill screen with black color
+        self.screen.fill(theme.get_background_color())
         self.updateLeaderboard()
-        game_over_text = self.font.render("Game Over", True, (255, 255, 255))
-        score_text = self.font.render("Score: " + str(self.player.score), True, (255, 255, 255))
-        restart_text = self.font.render("Press R to restart", True, (255, 255, 255))
-        menu_text = self.font.render("Press Q for menu", True, (255, 255, 255))  
+        go_col = theme.get_game_over_color()
+        game_over_text = self.font.render("Game Over", True, go_col)
+        score_text     = self.font.render("Score: " + str(self.player.score), True, theme.get_score_color())
+        restart_text   = self.font.render("Press R to restart", True, theme.get_hud_color())
+        menu_text      = self.font.render("Press Q for menu", True, theme.get_hud_color())
         # Position text on the screen
         game_over_rect = game_over_text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 2))
         score_rect = score_text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 2-50))

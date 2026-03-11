@@ -3,6 +3,7 @@ from config import *
 import math
 import random
 from dashEffect import DashEffect
+from color_theme import theme
 
 class Player(pygame.sprite.Sprite):
 
@@ -126,10 +127,9 @@ class Player(pygame.sprite.Sprite):
             bar_x = self.rect.centerx - bar_width / 2
             bar_y = self.rect.top - 10
             
-            # draw bg
-            pygame.draw.rect(screen, (200, 0, 0), (bar_x, bar_y, bar_width, 5))
-            # draw progres
-            pygame.draw.rect(screen, (0, 200, 0), (bar_x, bar_y, bar_width * progress, 5))
+            bg_col, fill_col = theme.get_cooldown_bar_colors(progress)
+            pygame.draw.rect(screen, bg_col,  (bar_x, bar_y, bar_width, 5))
+            pygame.draw.rect(screen, fill_col, (bar_x, bar_y, bar_width * progress, 5))
 
 
     def shoot_regular_bullet(self):
@@ -153,7 +153,7 @@ class Player(pygame.sprite.Sprite):
         current_time = pygame.time.get_ticks()
 
         # Calculate the time elapsed since the last shot
-        #time_since_last_shot = current_time - self.last_shot_time
+        time_since_last_shot = current_time - self.last_shot_time
 
         #change to ship 2 as long as you're pressing "Shift"
         if keys[pygame.K_LSHIFT]:
@@ -235,6 +235,8 @@ class Player(pygame.sprite.Sprite):
                 self.lives -= 1
                 PLAYER_DESTROYED_CHANNEL.play(PLAYER_DESTROYED_MUSIC)
                 self.damage_loop = current_time  # Reset invulnerability timer
+                theme.trigger_damage_flash(350)
+                theme.trigger_invuln_pulse(3000)
 
                 if self.lives <= 0:
                     self.kill()
@@ -246,7 +248,7 @@ class RegularBullet(pygame.sprite.Sprite):
         super().__init__()
         self.game = game
         self.image = pygame.Surface((BULLET_SIZE, BULLET_SIZE))
-        self.image.fill(BULLET_COLOR)
+        self.image.fill(theme.get_bullet_color())
         self.rect = self.image.get_rect(center=(x, y))
         self.speed = BULLET_SPEED
         self.angle = angle  # Store the angle passed from the player
@@ -280,7 +282,7 @@ class SpecialBullet(pygame.sprite.Sprite):
     def __init__(self, x, y, angle):
         super().__init__()
         self.image = pygame.Surface((BULLET_SIZE, BULLET_SIZE))
-        self.image.fill(SPECIAL_BULLET_COLOR)
+        self.image.fill(theme.get_special_bullet_color())
         self.rect = self.image.get_rect(center=(x, y))
         self.speed = SPECIAL_BULLET_SPEED
         self.angle = angle  # store the angle passed from the player
